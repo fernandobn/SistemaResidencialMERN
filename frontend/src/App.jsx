@@ -17,6 +17,7 @@ import ListarPresupuestos from "./components/ListarPresupuestos";
 import EditarPresupuesto from "./components/EditarPresupuesto";
 import NuevoPermiso from "./components/NuevoPermiso";
 import ListarPermisos from './components/ListarPermisos';  // Asegúrate de que la ruta sea correcta
+import EditarPermiso from './components/EditarPermiso';  // Asegúrate de que la ruta sea correcta
 function App() {
   return (
     <Router>
@@ -43,7 +44,8 @@ function App() {
         {/* Rutas de permisos */}
         <Route path="/nuevoPermiso" element={<NuevoPermiso />} />
         <Route path="/listarPermisos" element={<ListarPermisos />} />
-      </Routes>
+        <Route path="/editarPermiso/:id" element={<EditarPermiso />} />
+        </Routes>
 
       {/* ✅ El Footer aparece en todas las páginas */}
     </Router>

@@ -26,7 +26,16 @@ router.get('/', permisoController.obtenerPermisos);
 router.get('/:id', permisoController.obtenerPermisoPorId);
 
 // 📌 Ruta para editar un permiso por ID (con manejo de foto)
-router.put('/:id', upload.single('foto'), permisoController.editarPermiso);
+router.put("/:id", upload.single("foto"), (req, res) => {
+  console.log("📡 Datos recibidos en el backend:", req.body);
+  console.log("📡 req.body:", JSON.stringify(req.body, null, 2));
+  console.log("📸 req.file:", req.file);
+
+  if (req.file) console.log("📸 Archivo recibido:", req.file);
+
+  // Llamar al controlador
+  permisoController.editarPermiso(req, res);
+});
 
 // 📌 Ruta para eliminar un permiso por ID
 router.delete('/:id', permisoController.eliminarPermiso);

@@ -2,7 +2,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
-import { guardarUbicacion } from "../services/ubicacionService";  // Servicio que definiremos a continuación
+import { guardarUbicacion } from "../services/ubicacionService";
 
 const NuevaUbicacion = () => {
   const {
@@ -32,7 +32,11 @@ const NuevaUbicacion = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100">
+    <div
+      className="d-flex justify-content-center align-items-center vh-100"
+      style={{ backgroundColor: "#f8f9fa" }} // Fondo claro opcional
+    >
+      {/* Tarjeta centrada */}
       <div className="card shadow-lg p-4" style={{ maxWidth: "600px", width: "100%" }}>
         <h3 className="text-center mb-4 text-primary">Registrar Ubicación</h3>
         <form onSubmit={handleSubmit(onSubmit)}>

@@ -1,104 +1,131 @@
 import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom"; // Importa useNavigate
 import { useForm } from "react-hook-form";
 import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
+import { obtenerPermisoPorId, actualizarPermiso } from "../services/permisoService";
 import { listarProyectos } from "../services/proyectoService";
-import { guardarPermiso } from "../services/permisoService";
-import "bootstrap-fileinput/js/fileinput";
-import "bootstrap-fileinput/js/locales/es";
-import "bootstrap-fileinput/css/fileinput.min.css";
-import $ from "jquery";
 
-const NuevoPermiso = () => {
+const EditarPermiso = () => {
+  const { id: permisoId } = useParams(); // Captura el ID desde la URL
+  const navigate = useNavigate(); // Hook para redirigir al usuario
   const {
     register,
     handleSubmit,
-    formState: { errors },
     reset,
+    setValue,
+    formState: { errors },
   } = useForm();
   const [proyectos, setProyectos] = useState([]);
+  const [fotoPrevia, setFotoPrevia] = useState(null);
+  const [fotoExistente, setFotoExistente] = useState(""); // Nuevo estado para la foto existente
   const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
+    if (!permisoId) {
+      iziToast.error({
+        title: "Error",
+        message: "ID de permiso no válido.",
+        position: "topRight",
+      });
+      return;
+    }
+
+    // Cargar los proyectos
     listarProyectos()
-      .then((data) => setProyectos(data))
+      .then((data) => {
+        setProyectos(data);
+        // Después de cargar proyectos, cargar el permiso
+        return obtenerPermisoPorId(permisoId);
+      })
+      .then(({ success, data }) => {
+        if (success) {
+          const permiso = data.data;
+          setValue("tipo", permiso.tipo);
+          setValue("numero_permiso", permiso.numero_permiso);
+          setValue("fecha_emision", permiso.fecha_emision.split("T")[0]);
+          setValue("fecha_vencimiento", permiso.fecha_vencimiento?.split("T")[0] || "");
+          setValue("id_proyecto", permiso.id_proyecto);
+
+          // Guardar foto existente
+          setFotoExistente(permiso.foto || "");
+          setFotoPrevia(permiso.foto ? `http://localhost:5000/media/permisos/${permiso.foto}` : null);
+        } else {
+          throw new Error("Error al obtener los datos del permiso.");
+        }
+      })
       .catch((error) => {
-        console.error("Error al cargar los proyectos:", error);
+        console.error("Error al cargar el permiso o proyectos:", error);
         iziToast.error({
           title: "Error",
-          message: "No se pudieron cargar los proyectos.",
+          message: "No se pudo cargar el permiso o los proyectos.",
           position: "topRight",
         });
       });
-
-    $("#foto").fileinput({
-      language: "es",
-      showUpload: false,
-      showRemove: true,
-      browseClass: "btn btn-primary",
-      allowedFileExtensions: ["jpg", "jpeg", "png", "gif"],
-      dropZoneEnabled: true,
-      maxFileSize: 2048,
-      theme: "fas",
-    });
-  }, []);
+  }, [permisoId, setValue]);
 
   const onSubmit = async (data) => {
     const formData = new FormData();
-
-    if (data.foto && data.foto[0]) {
-      formData.append("foto", data.foto[0]);
-    }
-
+  
     formData.append("tipo", data.tipo);
     formData.append("numero_permiso", data.numero_permiso);
     formData.append("fecha_emision", data.fecha_emision);
     formData.append("fecha_vencimiento", data.fecha_vencimiento || "");
     formData.append("id_proyecto", data.id_proyecto);
-
+  
+    // Verifica si hay una nueva foto
+    if (data.foto && data.foto.length > 0) {
+      formData.append("foto", data.foto[0]); // Asegúrate de que el nombre sea "foto"
+    } else {
+      formData.append("fotoExistente", fotoExistente); // Enviar la foto actual si no se sube una nueva
+    }
+  
+    console.log("🚀 Datos enviados al backend:", formData); // Revisa en la consola del navegador
+  
     setSubiendo(true);
     try {
-      const result = await guardarPermiso(formData);
-
+      const result = await actualizarPermiso(permisoId, formData);
+  
       if (result.success) {
         iziToast.success({
           title: "Éxito",
-          message: "Permiso guardado correctamente.",
+          message: "Permiso actualizado correctamente.",
           position: "topRight",
         });
         reset();
-        $("#foto").fileinput("clear");
+        navigate("/listarPermisos");
       } else {
         iziToast.error({
           title: "Error",
-          message: result.message || "No se pudo guardar el permiso.",
+          message: result.message || "No se pudo actualizar el permiso.",
           position: "topRight",
         });
       }
     } catch (error) {
-      console.error("Error al guardar el permiso:", error);
+      console.error("Error al actualizar el permiso:", error);
       iziToast.error({
         title: "Error",
-        message: "No se pudo guardar el permiso. Verifique la consola para más detalles.",
+        message: "No se pudo actualizar el permiso. Verifique la consola para más detalles.",
         position: "topRight",
       });
     } finally {
       setSubiendo(false);
     }
   };
+  
 
   return (
     <main className="main" style={{ marginTop: "80px", backgroundColor: "#f9f9f9" }}>
-    <div className="container d-flex justify-content-center align-items-center vh-100">
-      <div
-        className="card shadow-lg p-4"
-        style={{
-          borderRadius: "12px",
-          maxWidth: "900px",
-          width: "100%",
-        }}
-      >
-          <h3 className="text-center mb-4 text-primary">Registrar Permiso</h3>
+      <div className="container d-flex justify-content-center align-items-center vh-100">
+        <div
+          className="card shadow-lg p-4"
+          style={{
+            borderRadius: "12px",
+            maxWidth: "900px",
+            width: "100%",
+          }}
+        >
+          <h3 className="text-center mb-4 text-primary">Editar Permiso</h3>
           <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
             <div className="row g-3">
               <div className="col-md-6">
@@ -135,11 +162,7 @@ const NuevoPermiso = () => {
               </div>
               <div className="col-md-6">
                 <label className="form-label">Fecha de Vencimiento</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  {...register("fecha_vencimiento")}
-                />
+                <input type="date" className="form-control" {...register("fecha_vencimiento")} />
               </div>
             </div>
 
@@ -161,20 +184,27 @@ const NuevoPermiso = () => {
               </div>
               <div className="col-md-6">
                 <label className="form-label">Foto</label>
-                <input
-                  id="foto"
-                  name="foto"
-                  type="file"
-                  accept="image/*"
-                  className="file"
-                  {...register("foto")}
-                />
+                {fotoPrevia && (
+                  <div className="mb-2">
+                    <img
+                      src={fotoPrevia}
+                      alt="Vista previa"
+                      style={{
+                        width: "100%",
+                        maxWidth: "200px",
+                        borderRadius: "8px",
+                        marginBottom: "10px",
+                      }}
+                    />
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="form-control" {...register("foto")} />
               </div>
             </div>
 
             <div className="d-flex justify-content-center mt-4">
               <button type="submit" className="btn btn-primary px-4" disabled={subiendo}>
-                {subiendo ? "Guardando..." : "Guardar Permiso"}
+                {subiendo ? "Guardando..." : "Actualizar Cambios"}
               </button>
             </div>
           </form>
@@ -184,4 +214,4 @@ const NuevoPermiso = () => {
   );
 };
 
-export default NuevoPermiso;
+export default EditarPermiso;

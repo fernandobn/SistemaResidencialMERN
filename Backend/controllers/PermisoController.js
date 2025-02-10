@@ -59,6 +59,14 @@ exports.obtenerPermisos = async (req, res) => {
 // 📌 Obtener un permiso por ID
 exports.obtenerPermisoPorId = async (req, res) => {
   const { id } = req.params;
+
+  if (!id || id.length !== 24) {
+    return res.status(400).json({
+      success: false,
+      message: "ID inválido proporcionado.",
+    });
+  }
+
   try {
     const permiso = await Permiso.findById(id);
     if (!permiso) {
@@ -81,10 +89,17 @@ exports.obtenerPermisoPorId = async (req, res) => {
   }
 };
 
-// 📌 Editar permiso (descripción, proyecto y reemplazo opcional de la foto)
+
+
+
+// 📌 Editar permiso (tipo, número, fechas, proyecto y foto opcional)
 exports.editarPermiso = async (req, res) => {
   const { id } = req.params;
+
   try {
+    console.log("📡 Datos recibidos en el backend:", req.body);
+    if (req.file) console.log("📸 Archivo recibido:", req.file.filename);
+
     const permiso = await Permiso.findById(id);
     if (!permiso) {
       return res.status(404).json({
@@ -93,32 +108,36 @@ exports.editarPermiso = async (req, res) => {
       });
     }
 
-    // Actualizamos los datos del permiso
+    // Extraer datos del cuerpo de la petición
     const { tipo, numero_permiso, fecha_emision, fecha_vencimiento, id_proyecto } = req.body;
+
+    // ✅ Actualizamos los datos si existen
     permiso.tipo = tipo || permiso.tipo;
     permiso.numero_permiso = numero_permiso || permiso.numero_permiso;
     permiso.fecha_emision = fecha_emision || permiso.fecha_emision;
     permiso.fecha_vencimiento = fecha_vencimiento || permiso.fecha_vencimiento;
     permiso.id_proyecto = id_proyecto || permiso.id_proyecto;
 
-    // Si se sube una nueva foto, actualizamos la foto
+    // ✅ Si se sube una nueva foto, eliminamos la anterior y guardamos la nueva
     if (req.file) {
-      const fotoPath = path.join(__dirname, "../media/fotos", permiso.foto);
-      
-      // Eliminar la foto anterior, si existe
-      if (fs.existsSync(fotoPath)) {
-        fs.unlink(fotoPath, (err) => {
-          if (err) {
-            console.error("❌ Error al eliminar la foto anterior:", err);
+      if (permiso.foto) {
+        const fotoAnteriorPath = path.join(__dirname, "../media/permisos", permiso.foto);
+        
+        if (fs.existsSync(fotoAnteriorPath)) {
+          try {
+            fs.unlinkSync(fotoAnteriorPath);
+            console.log(`✅ Foto anterior eliminada: ${permiso.foto}`);
+          } catch (err) {
+            console.error("⚠️ Error al eliminar la foto anterior:", err);
           }
-        });
+        }
       }
 
-      // Actualizamos el nombre de la nueva foto
+      // Guardamos la nueva foto
       permiso.foto = req.file.filename;
     }
 
-    // Guardamos los cambios en la base de datos
+    // ✅ Guardamos los cambios en la base de datos
     await permiso.save();
 
     res.status(200).json({
@@ -135,6 +154,7 @@ exports.editarPermiso = async (req, res) => {
     });
   }
 };
+
 
 
 
