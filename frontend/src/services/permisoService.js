@@ -24,28 +24,41 @@ export const obtenerPermisoPorId = async (id) => {
   }
 };
 
-// Actualizar un permiso
 export const actualizarPermiso = async (id, permisoData) => {
   try {
     const formData = new FormData();
+
+    // 📌 Agregar datos correctamente
     for (const key in permisoData) {
-      formData.append(key, permisoData[key]);
-      console.log(`📝 Agregando al FormData: ${key} = ${permisoData[key]}`);
+      if (key === "foto" && permisoData[key] instanceof File) {
+        formData.append("foto", permisoData[key]); // Adjuntar nueva foto si existe
+      } else if (key === "fotoExistente") {
+        formData.append("fotoExistente", permisoData[key]); // Adjuntar foto actual si no se cambia
+      } else {
+        formData.append(key, permisoData[key]); // Adjuntar otros datos
+      }
     }
 
-    console.log("🚀 Datos enviados al backend:", permisoData);
+    console.log("🚀 Enviando al backend:", Object.fromEntries(formData.entries())); 
 
-    const response = await API.put(`/permisos/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    const response = await fetch(`http://localhost:5000/api/permisos/${id}`, {
+      method: "PUT",
+      body: formData, 
     });
 
-    console.log("✅ Permiso actualizado exitosamente:", response.data);
-    return { success: true, data: response.data };
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("🚀 Permiso actualizado:", data);
+    return { success: true, data };
   } catch (error) {
-    console.error("❌ Error al actualizar permiso:", error);
+    console.error("🚨 Error al actualizar permiso:", error);
     return { success: false, message: "Error al actualizar permiso", error };
   }
 };
+
 
 // Crear un permiso
 export const guardarPermiso = async (formData) => {

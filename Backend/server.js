@@ -4,40 +4,48 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
-dotenv.config(); // Cargar variables de entorno
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 📌 Middleware CORS (Asegura que el frontend pueda hacer peticiones al backend)
+// 📌 Middleware CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173", // Permitir solicitudes desde el frontend
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 console.log("🚀 CORS habilitado para:", process.env.FRONTEND_URL || "http://localhost:5173");
 
-// 📌 Middleware para parsear JSON y URL-encoded (asegura compatibilidad con `multer`)
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// 📌 Middleware para JSON y URL-encoded
+app.use(express.json({ limit: "10mb" })); // ⬅️ Permitir imágenes en Base64 sin límite muy bajo
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 console.log("🚀 Middleware para JSON y URL-encoded habilitado");
 
-// 📌 Servir archivos estáticos (Imágenes de permisos)
+// 📌 Servir imágenes
 const permisosPath = path.join(__dirname, "media/permisos");
 app.use("/media/permisos", express.static(permisosPath));
-console.log("🚀 Carpeta de imágenes de permisos accesible en /media/permisos");
+console.log("🚀 Carpeta de imágenes accesible en /media/permisos");
 
-// 📌 Conexión a MongoDB con manejo de errores (corregido)
+// 📌 Conexión a MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB conectado correctamente"))
   .catch((err) => {
     console.error("❌ Error al conectar MongoDB:", err);
-    process.exit(1); // Termina el proceso si no se puede conectar a la BD
+    process.exit(1);
   });
-
-// 📌 Importar y usar rutas API
+  app.use((req, res, next) => {
+    console.log("📡 Nueva solicitud recibida:");
+    console.log("🔹 Método:", req.method);
+    console.log("🔹 URL:", req.url);
+    console.log("🔹 Headers:", req.headers["content-type"]);
+    console.log("🔹 Body recibido:", req.body);
+    next();
+  });
+  
+// 📌 Importar Rutas API
 const proyectosRoutes = require("./routes/ProyectosRoutes");
 const presupuestosRoutes = require("./routes/PresupuestoRoutes");
 const permisosRoutes = require("./routes/PermisoRoutes");
@@ -50,7 +58,7 @@ app.use("/api/ubicaciones", ubicacionesRoutes);
 
 console.log("🚀 Rutas API configuradas correctamente");
 
-// 📌 Ruta principal (Prueba si el servidor está activo)
+// 📌 Ruta principal
 app.get("/api/", (req, res) => {
   console.log("🚀 Ruta principal accedida");
   res.json({
@@ -62,6 +70,12 @@ app.get("/api/", (req, res) => {
       ubicaciones: "/api/ubicaciones",
     },
   });
+});
+
+// 📌 Manejo global de errores
+app.use((err, req, res, next) => {
+  console.error("❌ Error inesperado:", err);
+  res.status(500).json({ success: false, message: "Error interno del servidor" });
 });
 
 // 📌 Iniciar Servidor

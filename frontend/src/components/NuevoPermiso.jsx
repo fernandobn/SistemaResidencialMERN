@@ -18,6 +18,7 @@ const NuevoPermiso = () => {
   } = useForm();
   const [proyectos, setProyectos] = useState([]);
   const [subiendo, setSubiendo] = useState(false);
+  const [fotoBase64, setFotoBase64] = useState(null);
 
   useEffect(() => {
     listarProyectos()
@@ -31,6 +32,7 @@ const NuevoPermiso = () => {
         });
       });
 
+    // Inicializar el fileinput con jQuery
     $("#foto").fileinput({
       language: "es",
       showUpload: false,
@@ -41,24 +43,37 @@ const NuevoPermiso = () => {
       maxFileSize: 2048,
       theme: "fas",
     });
+
+    // Manejar cambio en la selección de archivo
+    $("#foto").on("change", function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFotoBase64(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
   }, []);
 
   const onSubmit = async (data) => {
-    const formData = new FormData();
-
-    if (data.foto && data.foto[0]) {
-      formData.append("foto", data.foto[0]);
-    }
-
-    formData.append("tipo", data.tipo);
-    formData.append("numero_permiso", data.numero_permiso);
-    formData.append("fecha_emision", data.fecha_emision);
-    formData.append("fecha_vencimiento", data.fecha_vencimiento || "");
-    formData.append("id_proyecto", data.id_proyecto);
-
     setSubiendo(true);
+
+    // Crear objeto con los datos
+    const permisoData = {
+      tipo: data.tipo,
+      numero_permiso: data.numero_permiso,
+      fecha_emision: data.fecha_emision,
+      fecha_vencimiento: data.fecha_vencimiento || "",
+      id_proyecto: data.id_proyecto,
+      fotoBase64: fotoBase64, // Enviar imagen como Base64
+    };
+
+    console.log("🚀 Enviando datos al backend:", permisoData);
+
     try {
-      const result = await guardarPermiso(formData);
+      const result = await guardarPermiso(permisoData);
 
       if (result.success) {
         iziToast.success({
@@ -68,6 +83,7 @@ const NuevoPermiso = () => {
         });
         reset();
         $("#foto").fileinput("clear");
+        setFotoBase64(null);
       } else {
         iziToast.error({
           title: "Error",
@@ -76,7 +92,7 @@ const NuevoPermiso = () => {
         });
       }
     } catch (error) {
-      console.error("Error al guardar el permiso:", error);
+      console.error("❌ Error al guardar el permiso:", error);
       iziToast.error({
         title: "Error",
         message: "No se pudo guardar el permiso. Verifique la consola para más detalles.",
@@ -89,36 +105,19 @@ const NuevoPermiso = () => {
 
   return (
     <main className="main" style={{ marginTop: "80px", backgroundColor: "#f9f9f9" }}>
-    <div className="container d-flex justify-content-center align-items-center vh-100">
-      <div
-        className="card shadow-lg p-4"
-        style={{
-          borderRadius: "12px",
-          maxWidth: "900px",
-          width: "100%",
-        }}
-      >
+      <div className="container d-flex justify-content-center align-items-center vh-100">
+        <div className="card shadow-lg p-4" style={{ borderRadius: "12px", maxWidth: "900px", width: "100%" }}>
           <h3 className="text-center mb-4 text-primary">Registrar Permiso</h3>
-          <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
+          <form onSubmit={handleSubmit(onSubmit)}>
             <div className="row g-3">
               <div className="col-md-6">
                 <label className="form-label">Tipo de Permiso</label>
-                <input
-                  type="text"
-                  className={`form-control ${errors.tipo ? "is-invalid" : ""}`}
-                  placeholder="Ejemplo: Construcción"
-                  {...register("tipo", { required: "Por favor ingrese el tipo de permiso." })}
-                />
+                <input type="text" className={`form-control ${errors.tipo ? "is-invalid" : ""}`} {...register("tipo", { required: "Ingrese el tipo de permiso." })} />
                 {errors.tipo && <div className="invalid-feedback">{errors.tipo.message}</div>}
               </div>
               <div className="col-md-6">
                 <label className="form-label">Número de Permiso</label>
-                <input
-                  type="text"
-                  className={`form-control ${errors.numero_permiso ? "is-invalid" : ""}`}
-                  placeholder="Ejemplo: 123456"
-                  {...register("numero_permiso", { required: "Por favor ingrese el número de permiso." })}
-                />
+                <input type="text" className={`form-control ${errors.numero_permiso ? "is-invalid" : ""}`} {...register("numero_permiso", { required: "Ingrese el número de permiso." })} />
                 {errors.numero_permiso && <div className="invalid-feedback">{errors.numero_permiso.message}</div>}
               </div>
             </div>
@@ -126,30 +125,19 @@ const NuevoPermiso = () => {
             <div className="row g-3 mt-3">
               <div className="col-md-6">
                 <label className="form-label">Fecha de Emisión</label>
-                <input
-                  type="date"
-                  className={`form-control ${errors.fecha_emision ? "is-invalid" : ""}`}
-                  {...register("fecha_emision", { required: "Por favor ingrese la fecha de emisión." })}
-                />
+                <input type="date" className={`form-control ${errors.fecha_emision ? "is-invalid" : ""}`} {...register("fecha_emision", { required: "Ingrese la fecha de emisión." })} />
                 {errors.fecha_emision && <div className="invalid-feedback">{errors.fecha_emision.message}</div>}
               </div>
               <div className="col-md-6">
                 <label className="form-label">Fecha de Vencimiento</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  {...register("fecha_vencimiento")}
-                />
+                <input type="date" className="form-control" {...register("fecha_vencimiento")} />
               </div>
             </div>
 
             <div className="row g-3 mt-3">
               <div className="col-md-6">
                 <label className="form-label">Proyecto</label>
-                <select
-                  className="form-control"
-                  {...register("id_proyecto", { required: "Por favor seleccione un proyecto." })}
-                >
+                <select className="form-control" {...register("id_proyecto", { required: "Seleccione un proyecto." })}>
                   <option value="">Seleccione un proyecto</option>
                   {proyectos.map((proyecto) => (
                     <option key={proyecto._id} value={proyecto._id}>
@@ -161,14 +149,7 @@ const NuevoPermiso = () => {
               </div>
               <div className="col-md-6">
                 <label className="form-label">Foto</label>
-                <input
-                  id="foto"
-                  name="foto"
-                  type="file"
-                  accept="image/*"
-                  className="file"
-                  {...register("foto")}
-                />
+                <input id="foto" name="foto" type="file" accept="image/*" className="file" />
               </div>
             </div>
 
