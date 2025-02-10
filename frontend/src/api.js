@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Crear una instancia de Axios configurada
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // Asegúrate de que esta URL sea correcta
+  baseURL: import.meta.env.VITE_API_URL, // ✅ Ahora debería funcionar
 });
+
+console.log("🔥 API BASE URL:", import.meta.env.VITE_API_URL);
 
 export default API;

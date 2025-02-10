@@ -41,7 +41,7 @@ export const actualizarPermiso = async (id, permisoData) => {
 
     console.log("🚀 Enviando al backend:", Object.fromEntries(formData.entries())); 
 
-    const response = await fetch(`http://localhost:5000/api/permisos/${id}`, {
+    const response = await fetch(`https://backendmern-pcor.onrender.com/api/permisos/${id}`, {
       method: "PUT",
       body: formData, 
     });

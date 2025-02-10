@@ -5,10 +5,6 @@ import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
 import { obtenerPermisoPorId, actualizarPermiso } from "../services/permisoService";
 import { listarProyectos } from "../services/proyectoService";
-import "bootstrap-fileinput/js/fileinput";
-import "bootstrap-fileinput/js/locales/es";
-import "bootstrap-fileinput/css/fileinput.min.css";
-import $ from "jquery";
 
 const EditarPermiso = () => {
   const { id: permisoId } = useParams();
@@ -23,8 +19,8 @@ const EditarPermiso = () => {
 
   const [proyectos, setProyectos] = useState([]);
   const [subiendo, setSubiendo] = useState(false);
-  const [fotoBase64, setFotoBase64] = useState(null);
   const [fotoExistente, setFotoExistente] = useState("");
+  const [nuevaFoto, setNuevaFoto] = useState(null);
 
   useEffect(() => {
     if (!permisoId) {
@@ -47,9 +43,7 @@ const EditarPermiso = () => {
           setValue("fecha_emision", permiso.fecha_emision.split("T")[0]);
           setValue("fecha_vencimiento", permiso.fecha_vencimiento?.split("T")[0] || "");
           setValue("id_proyecto", permiso.id_proyecto);
-          setValue("fotoExistente", permiso.foto || ""); // Setear la foto existente como hidden value
-
-          setFotoExistente(permiso.foto || "");
+          setFotoExistente(permiso.foto || ""); // Guarda la foto existente si la hay
         } else {
           throw new Error("Error al obtener los datos del permiso.");
         }
@@ -57,55 +51,45 @@ const EditarPermiso = () => {
       .catch(() =>
         iziToast.error({ title: "Error", message: "No se pudo cargar el permiso.", position: "topRight" })
       );
-
-    $("#foto").fileinput({
-      language: "es",
-      showUpload: false,
-      showRemove: true,
-      browseClass: "btn btn-primary",
-      allowedFileExtensions: ["jpg", "jpeg", "png", "gif"],
-      dropZoneEnabled: true,
-      maxFileSize: 2048,
-      theme: "fas",
-    });
-
-    $("#foto").on("change", function (event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setFotoBase64(reader.result);
-        };
-        reader.readAsDataURL(file);
-      }
-    });
   }, [permisoId, setValue]);
+
+  // Manejo del cambio de imagen
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNuevaFoto(reader.result); // Guardamos la imagen en base64
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const onSubmit = async (data) => {
     setSubiendo(true);
-  
+
     const permisoData = {
       tipo: data.tipo,
       numero_permiso: data.numero_permiso,
       fecha_emision: data.fecha_emision,
       fecha_vencimiento: data.fecha_vencimiento || "",
       id_proyecto: data.id_proyecto,
-      fotoBase64: fotoBase64 || null,
-      fotoExistente: data.fotoExistente, // Si no se cambia la imagen, se mantiene la existente
+      fotoBase64: nuevaFoto || null, // Si hay una nueva imagen, la enviamos, si no, null
+      fotoExistente: fotoExistente, // Mantiene la foto si no se sube una nueva
     };
-  
+
     console.log("🚀 Datos enviados al backend:", JSON.stringify(permisoData, null, 2));
-  
+
     try {
-      const response = await fetch(`http://localhost:5000/api/permisos/${permisoId}`, {
+      const response = await fetch(`https://backendmern-pcor.onrender.com/api/permisos/${permisoId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(permisoData),
       });
-  
+
       const result = await response.json();
       console.log("📡 Respuesta del servidor:", result);
-  
+
       if (result.success) {
         iziToast.success({
           title: "Éxito",
@@ -131,7 +115,6 @@ const EditarPermiso = () => {
       setSubiendo(false);
     }
   };
-  
 
   return (
     <main className="main" style={{ marginTop: "80px", backgroundColor: "#f9f9f9" }}>
@@ -139,7 +122,6 @@ const EditarPermiso = () => {
         <div className="card shadow-lg p-4" style={{ borderRadius: "12px", maxWidth: "900px", width: "100%" }}>
           <h3 className="text-center mb-4 text-primary">Editar Permiso</h3>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <input type="hidden" {...register("fotoExistente")} /> {/* Campo oculto para la foto existente */}
 
             <div className="row g-3">
               <div className="col-md-6">
@@ -175,10 +157,25 @@ const EditarPermiso = () => {
                   ))}
                 </select>
               </div>
-              <div className="col-md-6">
-                <label className="form-label">Foto</label>
-                <input id="foto" name="foto" type="file" accept="image/*" className="file" />
+
+              <div className="col-md-6 text-center">
+                <label className="form-label d-block">Imagen Actual</label>
+                {fotoExistente ? (
+                  <img
+                    src={`https://backendmern-pcor.onrender.com/media/permisos/${fotoExistente}`}
+                    alt="Imagen actual"
+                    className="img-thumbnail"
+                    style={{ width: "120px", height: "120px", objectFit: "cover", borderRadius: "5px" }}
+                  />
+                ) : (
+                  <p className="text-muted">No hay imagen disponible</p>
+                )}
               </div>
+            </div>
+
+            <div className="mt-3">
+              <label className="form-label">Nueva Imagen (opcional)</label>
+              <input type="file" className="form-control" accept="image/*" onChange={handleImageChange} />
             </div>
 
             <div className="d-flex justify-content-center mt-4">

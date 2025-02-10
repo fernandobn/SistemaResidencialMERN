@@ -67,6 +67,7 @@ const ListarPermisos = () => {
   useEffect(() => {
     if (!loading && permisos.length > 0) {
       console.log("🔄 Inicializando DataTable con permisos:", permisos);
+      
       setTimeout(() => {
         if ($.fn.DataTable.isDataTable("#tbl_permisos")) {
           $("#tbl_permisos").DataTable().destroy();
@@ -184,21 +185,25 @@ const ListarPermisos = () => {
                             <td>{permiso._id}</td>
                             <td>
                               {permiso.foto ? (
-                                <img
-                                  src={`http://localhost:5000/media/permisos/${permiso.foto}`}
-                                  alt="Vista previa"
-                                  className="img-thumbnail"
-                                  style={{
-                                    width: "60px",
-                                    height: "60px",
-                                    objectFit: "cover",
-                                    borderRadius: "5px",
-                                  }}
-                                />
+                                <>
+                                  {console.log("🖼️ URL de la imagen generada:", `https://backendmern-pcor.onrender.com/api/permisos${permiso.foto}`)}
+                                  <img
+                                    src={`https://backendmern-pcor.onrender.com/media/permisos/${permiso.foto}`}
+                                    alt="Vista previa"
+                                    className="img-thumbnail"
+                                    style={{
+                                      width: "60px",
+                                      height: "60px",
+                                      objectFit: "cover",
+                                      borderRadius: "5px",
+                                    }}
+                                  />
+                                </>
                               ) : (
                                 <span className="text-muted">Sin imagen</span>
                               )}
                             </td>
+
                             <td>{permiso.id_proyecto?.nombre || "Sin Proyecto"}</td>
                             <td>{permiso.tipo || "Sin tipo"}</td>
                             <td>{permiso.numero_permiso || "Sin número"}</td>
