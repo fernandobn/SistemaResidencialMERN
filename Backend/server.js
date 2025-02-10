@@ -11,9 +11,13 @@ const PORT = process.env.PORT || 5000;
 
 // 📌 Middleware CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: [
+    process.env.FRONTEND_URL || "http://localhost:5173",
+    "https://sistemaresidencialfrontend.onrender.com" // ✅ Agregar dominio de producción
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true // ✅ Permite cookies y autenticación si es necesario
 }));
 
 console.log("🚀 CORS habilitado para:", process.env.FRONTEND_URL || "http://localhost:5173");
@@ -36,15 +40,17 @@ mongoose.connect(process.env.MONGO_URI)
     console.error("❌ Error al conectar MongoDB:", err);
     process.exit(1);
   });
-  app.use((req, res, next) => {
+
+// 📡 Middleware para registrar cada solicitud
+app.use((req, res, next) => {
     console.log("📡 Nueva solicitud recibida:");
     console.log("🔹 Método:", req.method);
     console.log("🔹 URL:", req.url);
     console.log("🔹 Headers:", req.headers["content-type"]);
     console.log("🔹 Body recibido:", req.body);
     next();
-  });
-  
+});
+
 // 📌 Importar Rutas API
 const proyectosRoutes = require("./routes/ProyectosRoutes");
 const presupuestosRoutes = require("./routes/PresupuestoRoutes");
