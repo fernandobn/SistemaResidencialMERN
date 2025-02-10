@@ -14,22 +14,22 @@ const NuevoPermiso = () => {
     register,
     handleSubmit,
     formState: { errors },
-    reset
+    reset,
   } = useForm();
-  const [proyectos, setProyectos] = useState([]);  // State to store projects
+  const [proyectos, setProyectos] = useState([]); // State to store projects
   const [subiendo, setSubiendo] = useState(false);
 
   // Load projects on component mount
   useEffect(() => {
     listarProyectos()
       .then((data) => {
-        setProyectos(data);  // Save projects to state
+        setProyectos(data); // Save projects to state
       })
       .catch((error) => {
         console.error("Error loading projects:", error);
         iziToast.error({
           title: "Error",
-          message: "Unable to load projects.",
+          message: "No se pudieron cargar los proyectos.",
           position: "topRight",
         });
       });
@@ -46,35 +46,35 @@ const NuevoPermiso = () => {
   // Submit handler
   const onSubmit = async (data) => {
     const formData = new FormData();
-  
+
     if (data.foto && data.foto[0]) {
       formData.append("foto", data.foto[0]);
     }
-  
+
     formData.append("tipo", data.tipo);
     formData.append("numero_permiso", data.numero_permiso);
     formData.append("fecha_emision", data.fecha_emision);
     formData.append("fecha_vencimiento", data.fecha_vencimiento || "");
     formData.append("id_proyecto", data.id_proyecto);
-  
+
     console.log("📤 Enviando datos al backend:", Object.fromEntries(formData));
-  
+
     setSubiendo(true);
     try {
       const result = await guardarPermiso(formData);
       console.log("📝 Respuesta del backend:", result);
-  
+
       if (result.success) {
         iziToast.success({
-          title: "Success",
-          message: "Permission saved successfully.",
+          title: "Éxito",
+          message: "Permiso guardado correctamente.",
           position: "topRight",
         });
         reset();
       } else {
         iziToast.error({
           title: "Error",
-          message: result.message || "Failed to save the permission.",
+          message: result.message || "No se pudo guardar el permiso.",
           position: "topRight",
         });
       }
@@ -82,7 +82,7 @@ const NuevoPermiso = () => {
       console.error("🚨 Error saving permission:", error);
       iziToast.error({
         title: "Error",
-        message: "Failed to save the permission. Please check the console for more details.",
+        message: "No se pudo guardar el permiso. Verifique la consola para más detalles.",
         position: "topRight",
       });
     } finally {
@@ -92,55 +92,51 @@ const NuevoPermiso = () => {
 
   return (
     <main className="main d-flex justify-content-center align-items-center vh-100">
-      <div className="container">
-        <div className="card shadow-lg p-4">
-          <h3 className="text-center mb-4 text-primary">Register Permission</h3>
+      <div className="container-fluid">
+        <div className="card shadow-lg p-4" style={{ width: "100%" }}>
+          <h3 className="text-center mb-4 text-primary">Registrar Permiso</h3>
 
           <form onSubmit={handleSubmit(onSubmit)} encType="multipart/form-data">
-            {/* Permission Type */}
             <div className="row mb-3">
               <div className="col-md-6">
-                <label className="form-label">Permission Type</label>
+                <label className="form-label">Tipo de Permiso</label>
                 <input
                   type="text"
                   name="tipo"
                   className={`form-control ${errors.tipo ? "is-invalid" : ""}`}
-                  placeholder="E.g. Construction"
-                  {...register("tipo", { required: "Please enter the permission type." })}
+                  placeholder="Ejemplo: Construcción"
+                  {...register("tipo", { required: "Por favor ingrese el tipo de permiso." })}
                 />
                 {errors.tipo && <div className="invalid-feedback">{errors.tipo.message}</div>}
               </div>
 
-              {/* Permission Number */}
               <div className="col-md-6">
-                <label className="form-label">Permission Number</label>
+                <label className="form-label">Número de Permiso</label>
                 <input
                   type="text"
                   name="numero_permiso"
                   className={`form-control ${errors.numero_permiso ? "is-invalid" : ""}`}
-                  placeholder="E.g. 123456"
-                  {...register("numero_permiso", { required: "Please enter the permission number." })}
+                  placeholder="Ejemplo: 123456"
+                  {...register("numero_permiso", { required: "Por favor ingrese el número de permiso." })}
                 />
                 {errors.numero_permiso && <div className="invalid-feedback">{errors.numero_permiso.message}</div>}
               </div>
             </div>
 
             <div className="row mb-3">
-              {/* Issue Date */}
               <div className="col-md-6">
-                <label className="form-label">Issue Date</label>
+                <label className="form-label">Fecha de Emisión</label>
                 <input
                   type="date"
                   name="fecha_emision"
                   className={`form-control ${errors.fecha_emision ? "is-invalid" : ""}`}
-                  {...register("fecha_emision", { required: "Please enter the issue date." })}
+                  {...register("fecha_emision", { required: "Por favor ingrese la fecha de emisión." })}
                 />
                 {errors.fecha_emision && <div className="invalid-feedback">{errors.fecha_emision.message}</div>}
               </div>
 
-              {/* Expiration Date */}
               <div className="col-md-6">
-                <label className="form-label">Expiration Date</label>
+                <label className="form-label">Fecha de Vencimiento</label>
                 <input
                   type="date"
                   name="fecha_vencimiento"
@@ -151,15 +147,14 @@ const NuevoPermiso = () => {
             </div>
 
             <div className="row mb-3">
-              {/* Project */}
               <div className="col-md-12">
-                <label className="form-label">Project</label>
+                <label className="form-label">Proyecto</label>
                 <select
                   className="form-control"
                   name="id_proyecto"
-                  {...register("id_proyecto", { required: "Please select a project." })}
+                  {...register("id_proyecto", { required: "Por favor seleccione un proyecto." })}
                 >
-                  <option value="">Select a project</option>
+                  <option value="">Seleccione un proyecto</option>
                   {proyectos.map((proyecto) => (
                     <option key={proyecto._id} value={proyecto._id}>
                       {proyecto.nombre}
@@ -170,23 +165,27 @@ const NuevoPermiso = () => {
               </div>
             </div>
 
-            {/* Photo */}
             <div className="row mb-3">
-              <div className="col-md-12">
-                <label className="form-label">Photo</label>
-                <input
-                  id="foto"
-                  name="foto"
-                  type="file"
-                  accept="image/*"
-                  {...register("foto")}
-                />
+              <div className="col-md-12 d-flex justify-content-end">
+                <div className="form-group">
+                  <label className="form-label">Foto</label>
+                  <input
+                    id="foto"
+                    name="foto"
+                    type="file"
+                    accept="image/*"
+                    className="form-control-file"
+                    {...register("foto")}
+                  />
+                </div>
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary" disabled={subiendo}>
-              {subiendo ? "Saving..." : "Save Permission"}
-            </button>
+            <div className="d-flex justify-content-center">
+              <button type="submit" className="btn btn-primary" disabled={subiendo}>
+                {subiendo ? "Guardando..." : "Guardar Permiso"}
+              </button>
+            </div>
           </form>
         </div>
       </div>

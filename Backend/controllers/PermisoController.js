@@ -1,5 +1,8 @@
-const Permiso = require("../models/Permiso"); // Asegúrate de que esta línea esté correcta dependiendo de la estructura de tu proyecto.
+const Permiso = require("../models/Permiso");
+const path = require("path");
+const fs = require("fs");
 
+// 📌 Crear permiso
 exports.crearPermiso = async (req, res) => {
   try {
     const { tipo, numero_permiso, fecha_emision, fecha_vencimiento, id_proyecto } = req.body;
@@ -33,13 +36,11 @@ exports.crearPermiso = async (req, res) => {
   }
 };
 
-
-
-// Controlador para obtener todos los permisos
+// 📌 Obtener todos los permisos
 exports.obtenerPermisos = async (req, res) => {
   try {
     const permisos = await Permiso.find()
-      .populate('id_proyecto', 'nombre')  // Asegúrate de que 'id_proyecto' sea una referencia válida
+      .populate("id_proyecto", "nombre")  // Asegúrate de que 'id_proyecto' sea una referencia válida
       .exec();
 
     res.json({
@@ -55,7 +56,7 @@ exports.obtenerPermisos = async (req, res) => {
   }
 };
 
-// Obtener un permiso por ID
+// 📌 Obtener un permiso por ID
 exports.obtenerPermisoPorId = async (req, res) => {
   const { id } = req.params;
   try {
@@ -80,7 +81,7 @@ exports.obtenerPermisoPorId = async (req, res) => {
   }
 };
 
-// Editar un permiso
+// 📌 Editar permiso (descripción, proyecto y reemplazo opcional de la foto)
 exports.editarPermiso = async (req, res) => {
   const { id } = req.params;
   try {
@@ -93,14 +94,28 @@ exports.editarPermiso = async (req, res) => {
     }
 
     // Actualizamos los datos del permiso
-    const { nombre, descripcion, fecha } = req.body;
-    permiso.nombre = nombre || permiso.nombre;
-    permiso.descripcion = descripcion || permiso.descripcion;
-    permiso.fecha = fecha || permiso.fecha;
+    const { tipo, numero_permiso, fecha_emision, fecha_vencimiento, id_proyecto } = req.body;
+    permiso.tipo = tipo || permiso.tipo;
+    permiso.numero_permiso = numero_permiso || permiso.numero_permiso;
+    permiso.fecha_emision = fecha_emision || permiso.fecha_emision;
+    permiso.fecha_vencimiento = fecha_vencimiento || permiso.fecha_vencimiento;
+    permiso.id_proyecto = id_proyecto || permiso.id_proyecto;
 
-    // Si se subió una nueva foto, actualizamos la ruta de la foto (solo el nombre)
+    // Si se sube una nueva foto, actualizamos la foto
     if (req.file) {
-      permiso.foto = req.file.filename; // Guardamos solo el nombre de la nueva foto
+      const fotoPath = path.join(__dirname, "../media/fotos", permiso.foto);
+      
+      // Eliminar la foto anterior, si existe
+      if (fs.existsSync(fotoPath)) {
+        fs.unlink(fotoPath, (err) => {
+          if (err) {
+            console.error("❌ Error al eliminar la foto anterior:", err);
+          }
+        });
+      }
+
+      // Actualizamos el nombre de la nueva foto
+      permiso.foto = req.file.filename;
     }
 
     // Guardamos los cambios en la base de datos
@@ -121,7 +136,7 @@ exports.editarPermiso = async (req, res) => {
   }
 };
 
-// Eliminar un permiso
+// 📌 Eliminar permiso
 exports.eliminarPermiso = async (req, res) => {
   const { id } = req.params;
   try {
@@ -133,7 +148,16 @@ exports.eliminarPermiso = async (req, res) => {
       });
     }
 
-    // Eliminar el permiso
+    // Eliminar el archivo de la foto del sistema de archivos
+    if (permiso.foto) {
+      const fotoPath = path.join(__dirname, "../media/fotos", permiso.foto);
+      
+      // Intentar eliminar la foto
+      await fs.promises.unlink(fotoPath);
+      console.log("✅ Foto eliminada del servidor:", permiso.foto);
+    }
+
+    // Eliminar el permiso de la base de datos
     await permiso.remove();
 
     res.status(200).json({

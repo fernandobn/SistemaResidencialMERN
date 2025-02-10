@@ -1,8 +1,9 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 import Header from "./components/Header";
 // Importa Footer si ya lo tienes creado
-import Footer from "./components/Footer"; 
 import Home from "./components/Home";
 import Ubicacion from "./components/NuevaUbicacion";
 import ListarUbicaciones from "./components/ListarUbicaciones";
@@ -43,8 +44,7 @@ function App() {
         <Route path="/listarPermisos" element={<ListarPermisos />} />
       </Routes>
 
-      {/* ✅ El Footer aparece en todas las páginas */}
-      <Footer />
+      
     </Router>
   );
 }
