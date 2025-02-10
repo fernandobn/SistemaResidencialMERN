@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Importa useNavigate
+import { useParams, useNavigate } from "react-router-dom"; 
 import { useForm } from "react-hook-form";
 import iziToast from "izitoast";
 import "izitoast/dist/css/iziToast.min.css";
@@ -7,8 +7,8 @@ import { obtenerPermisoPorId, actualizarPermiso } from "../services/permisoServi
 import { listarProyectos } from "../services/proyectoService";
 
 const EditarPermiso = () => {
-  const { id: permisoId } = useParams(); // Captura el ID desde la URL
-  const navigate = useNavigate(); // Hook para redirigir al usuario
+  const { id: permisoId } = useParams(); 
+  const navigate = useNavigate(); 
   const {
     register,
     handleSubmit,
@@ -16,9 +16,10 @@ const EditarPermiso = () => {
     setValue,
     formState: { errors },
   } = useForm();
+  
   const [proyectos, setProyectos] = useState([]);
   const [fotoPrevia, setFotoPrevia] = useState(null);
-  const [fotoExistente, setFotoExistente] = useState(""); // Nuevo estado para la foto existente
+  const [fotoExistente, setFotoExistente] = useState(""); 
   const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
@@ -31,11 +32,9 @@ const EditarPermiso = () => {
       return;
     }
 
-    // Cargar los proyectos
     listarProyectos()
       .then((data) => {
         setProyectos(data);
-        // Después de cargar proyectos, cargar el permiso
         return obtenerPermisoPorId(permisoId);
       })
       .then(({ success, data }) => {
@@ -47,7 +46,7 @@ const EditarPermiso = () => {
           setValue("fecha_vencimiento", permiso.fecha_vencimiento?.split("T")[0] || "");
           setValue("id_proyecto", permiso.id_proyecto);
 
-          // Guardar foto existente
+          // Guardar la foto existente
           setFotoExistente(permiso.foto || "");
           setFotoPrevia(permiso.foto ? `http://localhost:5000/media/permisos/${permiso.foto}` : null);
         } else {
@@ -73,14 +72,14 @@ const EditarPermiso = () => {
     formData.append("fecha_vencimiento", data.fecha_vencimiento || "");
     formData.append("id_proyecto", data.id_proyecto);
   
-    // Verifica si hay una nueva foto
+    // Verifica si se ha seleccionado una nueva foto
     if (data.foto && data.foto.length > 0) {
-      formData.append("foto", data.foto[0]); // Asegúrate de que el nombre sea "foto"
+      formData.append("foto", data.foto[0]); 
     } else {
       formData.append("fotoExistente", fotoExistente); // Enviar la foto actual si no se sube una nueva
     }
   
-    console.log("🚀 Datos enviados al backend:", formData); // Revisa en la consola del navegador
+    console.log("🚀 Datos enviados al backend:", formData);
   
     setSubiendo(true);
     try {
@@ -112,7 +111,6 @@ const EditarPermiso = () => {
       setSubiendo(false);
     }
   };
-  
 
   return (
     <main className="main" style={{ marginTop: "80px", backgroundColor: "#f9f9f9" }}>
@@ -180,25 +178,16 @@ const EditarPermiso = () => {
                     </option>
                   ))}
                 </select>
-                {errors.id_proyecto && <div className="invalid-feedback">{errors.id_proyecto.message}</div>}
               </div>
               <div className="col-md-6">
                 <label className="form-label">Foto</label>
-                {fotoPrevia && (
-                  <div className="mb-2">
-                    <img
-                      src={fotoPrevia}
-                      alt="Vista previa"
-                      style={{
-                        width: "100%",
-                        maxWidth: "200px",
-                        borderRadius: "8px",
-                        marginBottom: "10px",
-                      }}
-                    />
-                  </div>
-                )}
-                <input type="file" accept="image/*" className="form-control" {...register("foto")} />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="form-control" 
+                  {...register("foto")} 
+                />
+                <small className="text-muted">Foto actual: {fotoExistente || "No hay foto"}</small>
               </div>
             </div>
 
