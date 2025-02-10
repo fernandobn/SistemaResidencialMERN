@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
+    "start": "vite preview"  
+
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
