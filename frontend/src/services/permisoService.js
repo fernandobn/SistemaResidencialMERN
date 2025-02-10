@@ -61,12 +61,12 @@ export const actualizarPermiso = async (id, permisoData) => {
   }
 };
 
-// Eliminar un permiso
+// Eliminar un permiso por ID
 export const eliminarPermiso = async (id) => {
   try {
     const response = await API.delete(`/permisos/${id}`);
-    console.log("🚀 Respuesta al eliminar permiso:", response.data); // Log de la respuesta
-    return { success: true, message: "Permiso eliminado exitosamente." };
+    console.log("✅ Permiso eliminado:", response.data);
+    return { success: true, message: "Permiso eliminado exitosamente" };
   } catch (error) {
     console.error("🚨 Error al eliminar permiso:", error);
     return { success: false, message: "Error al eliminar permiso", error };

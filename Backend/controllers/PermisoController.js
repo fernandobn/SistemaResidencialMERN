@@ -136,10 +136,14 @@ exports.editarPermiso = async (req, res) => {
   }
 };
 
-// 📌 Eliminar permiso
+
+
+// 📌 Eliminar un permiso por ID
 exports.eliminarPermiso = async (req, res) => {
   const { id } = req.params;
+
   try {
+    // Buscar el permiso en la base de datos
     const permiso = await Permiso.findById(id);
     if (!permiso) {
       return res.status(404).json({
@@ -148,28 +152,35 @@ exports.eliminarPermiso = async (req, res) => {
       });
     }
 
-    // Eliminar el archivo de la foto del sistema de archivos
+    // Si tiene una imagen asociada, eliminarla del sistema de archivos
     if (permiso.foto) {
-      const fotoPath = path.join(__dirname, "../media/fotos", permiso.foto);
+      const fotoPath = path.join(__dirname, "../media/permisos", permiso.foto);
       
-      // Intentar eliminar la foto
-      await fs.promises.unlink(fotoPath);
-      console.log("✅ Foto eliminada del servidor:", permiso.foto);
+      try {
+        if (fs.existsSync(fotoPath)) {
+          await fs.promises.unlink(fotoPath);
+          console.log(`✅ Foto eliminada: ${permiso.foto}`);
+        }
+      } catch (err) {
+        console.error("⚠️ Error al eliminar la foto:", err);
+      }
     }
 
     // Eliminar el permiso de la base de datos
-    await permiso.remove();
+    await permiso.deleteOne();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Permiso eliminado exitosamente",
     });
+
   } catch (error) {
     console.error("❌ Error al eliminar permiso:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Error al eliminar permiso",
+      message: "Error interno del servidor al eliminar el permiso",
       error: error.message,
     });
   }
 };
+

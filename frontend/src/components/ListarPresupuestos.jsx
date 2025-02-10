@@ -16,39 +16,43 @@ const ListarPresupuestos = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // UseEffect para cargar presupuestos al iniciar el componente
-  useEffect(() => {
-    const fetchPresupuestos = async () => {
-      try {
-        const { success, data } = await obtenerPresupuestos();
-        if (success) {
-          setPresupuestos(data);
-        } else {
-          iziToast.error({
-            title: "Error",
-            message: "No se pudieron cargar los presupuestos.",
-            position: "topRight",
-          });
-        }
-      } catch (error) {
-        console.error("Error al obtener presupuestos:", error);
+  // Función para obtener presupuestos
+  const fetchPresupuestos = async () => {
+    try {
+      const { success, data } = await obtenerPresupuestos();
+      if (success) {
+        setPresupuestos(data);
+      } else {
         iziToast.error({
           title: "Error",
           message: "No se pudieron cargar los presupuestos.",
           position: "topRight",
         });
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error al obtener presupuestos:", error);
+      iziToast.error({
+        title: "Error",
+        message: "No se pudieron cargar los presupuestos.",
+        position: "topRight",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Ejecutar fetchPresupuestos al montar el componente
+  useEffect(() => {
     fetchPresupuestos();
   }, []);
 
-  // UseEffect para inicializar DataTable solo una vez
+  // Inicializar DataTable cuando se cargan los presupuestos
   useEffect(() => {
     if (!loading && presupuestos.length > 0) {
-      if (!$.fn.DataTable.isDataTable("#tbl_presupuestos")) {
+      setTimeout(() => {
+        if ($.fn.DataTable.isDataTable("#tbl_presupuestos")) {
+          $("#tbl_presupuestos").DataTable().destroy();
+        }
         $("#tbl_presupuestos").DataTable({
           dom: "Bfrtip",
           buttons: ["copyHtml5", "excelHtml5", "csvHtml5", "pdfHtml5"],
@@ -56,11 +60,11 @@ const ListarPresupuestos = () => {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
           },
         });
-      }
+      }, 500);
     }
   }, [loading, presupuestos]);
 
-  // Función para manejar la eliminación de un presupuesto
+  // Manejo de eliminación de presupuestos
   const handleEliminar = async (id) => {
     try {
       iziToast.question({
@@ -76,16 +80,14 @@ const ListarPresupuestos = () => {
             "<button><b>SÍ</b></button>",
             async function (instance, toast) {
               try {
-                const { success } = await eliminarPresupuesto(id); // Usar _id para eliminar
+                const { success } = await eliminarPresupuesto(id);
                 if (success) {
                   iziToast.success({
                     title: "Éxito",
                     message: "Presupuesto eliminado con éxito.",
                     position: "topRight",
                   });
-                  setPresupuestos((prev) =>
-                    prev.filter((presupuesto) => presupuesto._id !== id) // Filtrar por _id
-                  );
+                  fetchPresupuestos(); // Actualizar la lista automáticamente
                 } else {
                   iziToast.error({
                     title: "Error",
@@ -118,7 +120,7 @@ const ListarPresupuestos = () => {
     }
   };
 
-  // Si está cargando, mostrar el spinner
+  // Mostrar spinner mientras carga
   if (loading) {
     return (
       <div className="text-center mt-5">
@@ -131,61 +133,74 @@ const ListarPresupuestos = () => {
   }
 
   return (
-    <div style={{ maxWidth: "100%", padding: "20px" }}>
-      <h3 className="text-center mb-4">Listado de Presupuestos</h3>
-      {presupuestos.length === 0 ? (
-        <div className="alert alert-warning text-center">
-          No hay presupuestos disponibles.
+    <div className="main-warp">
+      <div className="page-section contact-page">
+        <div className="contact-warp">
+          <div className="row justify-content-center">
+            <div className="col-xl-10 col-lg-12 col-md-12 mx-auto">
+              <h3 className="text-center mb-4">Listado de Presupuestos</h3>
+              {presupuestos.length === 0 ? (
+                <div className="alert alert-warning text-center">
+                  No hay presupuestos disponibles.
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table
+                    className="table table-bordered table-hover align-middle"
+                    id="tbl_presupuestos"
+                  >
+                    <thead className="table-dark">
+                      <tr>
+                        <th>ID</th>
+                        <th>Monto Total</th>
+                        <th>Monto Utilizado</th>
+                        <th>Fecha de Aprobación</th>
+                        <th>Proyecto</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {presupuestos.map((presupuesto) => (
+                        <tr key={presupuesto._id}>
+                          <td>{presupuesto._id}</td>
+                          <td>{presupuesto.monto_total}</td>
+                          <td>{presupuesto.monto_utilizado}</td>
+                          <td>
+                            {new Date(presupuesto.fecha_aprobacion).toLocaleDateString()}
+                          </td>
+                          <td>
+                            {presupuesto.id_proyecto
+                              ? presupuesto.id_proyecto.nombre
+                              : "No asignado"}
+                          </td>
+                          <td>
+                            <div className="d-flex justify-content-center">
+                              <button
+                                className="btn btn-info btn-sm me-2"
+                                onClick={() =>
+                                  navigate(`/editarPresupuesto/${presupuesto._id}`)
+                                }
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleEliminar(presupuesto._id)}
+                              >
+                                🗑️ Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="table-responsive">
-          <table
-            className="table table-striped table-bordered table-hover align-middle"
-            id="tbl_presupuestos"
-            style={{ fontSize: "1rem", width: "100%" }}
-          >
-            <thead className="table-dark">
-              <tr>
-                <th>ID</th>
-                <th>Monto Total</th>
-                <th>Monto Utilizado</th>
-                <th>Fecha de Aprobación</th>
-                <th>Proyecto</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {presupuestos.map((presupuesto) => (
-                <tr key={presupuesto._id}>
-                  <td>{presupuesto._id}</td>
-                  <td>{presupuesto.monto_total}</td>
-                  <td>{presupuesto.monto_utilizado}</td>
-                  <td>{new Date(presupuesto.fecha_aprobacion).toLocaleDateString()}</td>
-                  <td>
-                    {presupuesto.id_proyecto ? presupuesto.id_proyecto.nombre : "No asignado"}
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-info btn-sm rounded-pill mb-2"
-                      onClick={() =>
-                        navigate(`/editarPresupuesto/${presupuesto._id}`)
-                      }
-                    >
-                      ✏️ Editar
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm rounded-pill mb-2"
-                      onClick={() => handleEliminar(presupuesto._id)}
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
